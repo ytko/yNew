@@ -5,13 +5,11 @@
  * Contains yNew class
  */
 
-//spl_autoload_register(array('yNew', 'load'));
-
 class yNew {
 	public $directory = '/';
 	public static
+		$basePath,
 		$path,
-		$classesPath,
 		//$altPaths,
 		$delimiter = '_',
 		$extension = 'php',
@@ -51,7 +49,21 @@ class yNew {
 		array_shift($arguments);
 		return static::createArgs($class, $arguments);
 	}
-	
+
+/** Adds static::load() to autoload.
+ */
+	public static function autoload() {
+		$factory = get_called_class();
+		spl_autoload_register(
+			function($class) use ($factory) {
+				try {
+					$factory::load($class);
+				} catch (Exception $e) {}
+			},
+			false
+		);
+	}
+
 /** Includes file with class $className if class doesn't defined yet.
  * @param string $class Name of class
  * @param string $componentPath (optional) Path to file with class relatively to framework root
@@ -64,7 +76,7 @@ class yNew {
 
 		$fullPath = static::classPath($class);
 	
-		if(!include_once($fullPath))
+		if(!@include_once($fullPath))
 			throw new Exception("Can't load class \"$class\" from \"$fullPath\".");
 
 		return $fullPath;
@@ -72,7 +84,7 @@ class yNew {
 		
 	/// Returns path to $class depending on class settings
 	public static function classPath($class) {
-		if(!isset(static::$path)) static::$path = __dir__;
+		if(!isset(static::$basePath)) static::$basePath = __dir__;
 
 		if(isset(static::$delimiter)) {
 			$exploded = explode(static::$delimiter, $class);
@@ -84,8 +96,8 @@ class yNew {
 		}
 		
 		return
-			static::$path.
-			(static::$classesPath ? '/'.static::$classesPath : '').
+			static::$basePath.
+			(static::$path ? '/'.static::$path : '').
 			($classPath ? '/'.$classPath : '').
 			'/'.$fileName.
 			'.'.static::$extension;		
