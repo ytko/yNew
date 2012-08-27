@@ -1,7 +1,7 @@
 <?php //defined ('_YEXEC')  or  die('Restricted access');
-/** \file factory.php
+/** \file ynew.php
  *  \author Roman Exempliarov
- *  \version 0.1
+ *  \version 0.1 (php 5.2)
  * Contains yNew class
  */
 
@@ -13,13 +13,13 @@ class yNew {
 		//$altPaths,
 		$delimiter = '_',
 		$extension = 'php',
-		$allowMagic = true;		// Allows sending class name as static method name
+		$allowMagic = true;		// Allows sending class name as self method name
 
-	public static function __callStatic($method, $arguments) {
-		if(static::$allowMagic)
-			return static::createArgs($method, $arguments);
+	public static function __callself($method, $arguments) {
+		if(self::$allowMagic)
+			return self::createArgs($method, $arguments);
 		else
-			throw new Exception("Missing static method '$method'.");
+			throw new Exception("Missing self method '$method'.");
 	}
 
 /** Creates class $className instance.
@@ -27,7 +27,7 @@ class yNew {
  * @param array $arguments (optional) Arguments for $className constructor
  */
 	public static function createArgs($class, $arguments = NULL) {
-		static::load($class);
+		self::load($class);
 
 		// Return class instance
 		if (empty($arguments))
@@ -47,21 +47,7 @@ class yNew {
 	public static function create($class) {
 		$arguments = func_get_args();
 		array_shift($arguments);
-		return static::createArgs($class, $arguments);
-	}
-
-/** Adds static::load() to autoload.
- */
-	public static function autoload() {
-		$factory = get_called_class();
-		spl_autoload_register(
-			function($class) use ($factory) {
-				try {
-					$factory::load($class);
-				} catch (Exception $e) {}
-			},
-			false
-		);
+		return self::createArgs($class, $arguments);
 	}
 
 /** Includes file with class $className if class doesn't defined yet.
@@ -74,7 +60,7 @@ class yNew {
 		if(class_exists($class))
 			return false;
 
-		$fullPath = static::classPath($class);
+		$fullPath = self::classPath($class);
 	
 		if(!@include_once($fullPath))
 			throw new Exception("Can't load class \"$class\" from \"$fullPath\".");
@@ -84,10 +70,10 @@ class yNew {
 		
 	/// Returns path to $class depending on class settings
 	public static function classPath($class) {
-		if(!isset(static::$basePath)) static::$basePath = __dir__;
+		if(!isset(self::$basePath)) self::$basePath = defined(__DIR__) ? __DIR__  : dirname(__FILE__);
 
-		if(isset(static::$delimiter)) {
-			$exploded = explode(static::$delimiter, $class);
+		if(isset(self::$delimiter)) {
+			$exploded = explode(self::$delimiter, $class);
 			$fileName = array_pop($exploded);
 			$classPath = (!empty($exploded) ? implode('/', $exploded) : $fileName);
 		} else {
@@ -96,11 +82,11 @@ class yNew {
 		}
 		
 		return
-			static::$basePath.
-			(static::$path ? '/'.static::$path : '').
+			self::$basePath.
+			(self::$path ? '/'.self::$path : '').
 			($classPath ? '/'.$classPath : '').
 			'/'.$fileName.
-			'.'.static::$extension;		
+			'.'.self::$extension;		
 	}
 }
 
